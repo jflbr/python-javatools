@@ -23,6 +23,8 @@ distribution of mixed class files and JARs.
 """
 
 
+from future.utils import iteritems
+
 import sys
 
 from json import dump
@@ -88,9 +90,9 @@ class DistInfo(object):
 
         for entry in self.get_jars():
             ji = self.get_jarinfo(entry)
-            for sym, data in ji.get_requires().iteritems():
+            for sym, data in iteritems(ji.get_requires()):
                 req.setdefault(sym, []).append((REQ_BY_JAR, entry, data))
-            for sym, data in ji.get_provides().iteritems():
+            for sym, data in iteritems(ji.get_provides()):
                 prov.setdefault(sym, []).append((PROV_BY_JAR, entry, data))
                 p.add(sym)
             ji.close()
@@ -104,7 +106,7 @@ class DistInfo(object):
             for sym in ci.get_provides(private=True):
                 p.add(sym)
 
-        req = dict((k, v) for k, v in req.iteritems() if k not in p)
+        req = dict((k, v) for k, v in iteritems(req) if k not in p)
 
         self._requires = req
         self._provides = prov
@@ -120,7 +122,7 @@ class DistInfo(object):
 
         d = self._requires
         if ignored:
-            d = dict((k, v) for k, v in d.iteritems()
+            d = dict((k, v) for k, v in iteritems(d)
                      if not fnmatches(k, *ignored))
         return d
 
@@ -136,7 +138,7 @@ class DistInfo(object):
 
         d = self._provides
         if ignored:
-            d = dict((k, v) for k, v in d.iteritems()
+            d = dict((k, v) for k, v in iteritems(d)
                      if not fnmatches(k, *ignored))
         return d
 
@@ -198,19 +200,19 @@ def _collect_dist(pathn):
 
 
 def cli_dist_provides(options, info):
-    print "distribution provides:"
+    print("distribution provides:")
 
     for provided in sorted(info.get_provides(options.api_ignore)):
-        print " ", provided
+        print(" ", provided)
     print
 
 
 def cli_dist_requires(options, info):
-    print "distribution requires:"
+    print("distribution requires:")
 
     for required in sorted(info.get_requires(options.api_ignore)):
-        print " ", required
-    print
+        print(" ", required)
+    print()
 
 
 def cli_distinfo(options, info):

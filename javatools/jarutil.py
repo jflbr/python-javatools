@@ -81,7 +81,7 @@ def verify(certificate, jar_file, sf_name=None):
 
     # Step 0: get the "key alias", used also for naming of sig-related files.
     zip_file = ZipFile(jar_file)
-    sf_files = filter(file_matches_sigfile, zip_file.namelist())
+    sf_files = list(filter(file_matches_sigfile, zip_file.namelist()))
 
     if len(sf_files) == 0:
         raise JarSignatureMissingError("No .SF file in %s" % jar_file)
@@ -289,11 +289,11 @@ def cli_sign_jar(argument_list=None):
              args.extra_certs, args.digest, args.output)
 
     except CannotFindKeyTypeError:
-        print "Cannot determine private key type in %s" % args.key_file
+        print("Cannot determine private key type in %s" % args.key_file)
         return 1
 
     except MissingManifestError:
-        print "Manifest missing in jar file %s" % args.jar_file
+        print("Manifest missing in jar file %s" % args.jar_file)
         return 2
 
     return 0
@@ -307,17 +307,17 @@ def cli_verify_jar_signature(argument_list):
 
     usage_message = "jarutil v file.jar trusted_certificate.pem [SF_NAME.SF]"
     if len(argument_list) < 2 or len(argument_list) > 3:
-        print usage_message
+        print(usage_message)
         return 1
 
     jar_file, certificate, sf_name = (argument_list + [None])[:3]
     try:
         verify(certificate, jar_file, sf_name)
     except VerificationError as error_message:
-        print error_message
+        print(error_message)
         return 1
     else:
-        print "Jar verified."
+        print("Jar verified.")
         return 0
 
 

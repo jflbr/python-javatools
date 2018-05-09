@@ -20,8 +20,10 @@ Classes for representing changes as formatted text.
 :license: LGPL
 """
 
+from future.utils import with_metaclass
 
 import sys
+from builtins import range as xrange
 
 from abc import ABCMeta, abstractmethod
 from Cheetah.DummyTransaction import DummyTransaction
@@ -167,7 +169,7 @@ class Reporter(object):
         self._formats = None
 
 
-class ReportFormat(object):
+class ReportFormat(with_metaclass(ABCMeta, object)):
     """
     Base class of a report format provider. Override to describe a
     concrete format type
@@ -294,7 +296,7 @@ class JSONReportFormat(ReportFormat):
 
         except TypeError:
             # XXX for debugging. Otherwise the wrapping try isn't necessary
-            print data
+            print(data)
             raise
 
 
@@ -389,7 +391,7 @@ def _indent(stream, indent, *msgs):
     for x in xrange(0, indent):
         stream.write("  ")
     for x in msgs:
-        stream.write(x.encode("ascii", "backslashreplace"))
+        stream.write(x.encode("ascii", "backslashreplace").decode())
     stream.write("\n")
 
 

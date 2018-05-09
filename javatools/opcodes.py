@@ -25,6 +25,7 @@ References
 :license: LGPL v.3
 """
 
+from past.builtins import xrange
 
 from functools import partial
 
@@ -238,7 +239,13 @@ def disassemble(bytecode):
     while offset < end:
         orig_offset = offset
 
-        code = ord(bytecode[offset])
+        if isinstance(bytecode[offset], int):
+            bc = chr(bytecode[offset])
+        else:
+            bc = bytecode[offset]
+
+        code = ord(bc)
+
         offset += 1
 
         args = tuple()

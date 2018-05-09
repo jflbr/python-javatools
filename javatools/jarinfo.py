@@ -21,6 +21,7 @@ printing it out.
 :license: LGPL
 """
 
+from future.utils import iteritems
 
 import sys
 
@@ -105,7 +106,7 @@ class JarInfo(object):
             for sym in ci.get_provides(private=True):
                 p.add(sym)
 
-        req = dict((k, v) for k, v in req.iteritems() if k not in p)
+        req = dict((k, v) for k, v in iteritems(req) if k not in p)
 
         self._requires = req
         self._provides = prov
@@ -117,7 +118,7 @@ class JarInfo(object):
 
         d = self._requires
         if ignored:
-            d = dict((k, v) for k, v in d.iteritems()
+            d = dict((k, v) for k, v in iteritems(d)
                      if not fnmatches(k, *ignored))
         return d
 
@@ -128,7 +129,7 @@ class JarInfo(object):
 
         d = self._provides
         if ignored:
-            d = dict((k, v) for k, v in d.iteritems()
+            d = dict((k, v) for k, v in iteritems(d)
                      if not fnmatches(k, *ignored))
         return d
 
@@ -185,19 +186,19 @@ def cli_jar_manifest_info(options, jarinfo):
     mf = jarinfo.get_manifest()
 
     if not mf:
-        print "Manifest not present."
-        print
+        print("Manifest not present.")
+        print()
         return
 
-    print "Manifest main section:"
+    print("Manifest main section:")
     for k, v in sorted(mf.items()):
-        print "  %s: %s" % (k, v)
+        print("  %s: %s" % (k, v))
 
     for _name, sect in sorted(mf.sub_sections.items()):
-        print
-        print "Manifest sub-section:"
+        print()
+        print("Manifest sub-section:")
         for k, v in sorted(sect.items()):
-            print "  %s: %s" % (k, v)
+            print("  %s: %s" % (k, v))
 
     print
 
@@ -208,35 +209,35 @@ def cli_jar_zip_info(options, jarinfo):
     files, dirs, comp, uncomp = zip_entry_rollup(zipfile)
     prcnt = (float(comp) / float(uncomp)) * 100
 
-    print "Contains %i files, %i directories" % (files, dirs)
-    print "Uncompressed size is %i" % uncomp
-    print "Compressed size is %i (%0.1f%%)" % (comp, prcnt)
+    print("Contains %i files, %i directories" % (files, dirs))
+    print("Uncompressed size is %i" % uncomp)
+    print("Compressed size is %i (%0.1f%%)" % (comp, prcnt))
     print
 
 
 def cli_jar_classes(options, jarinfo):
     for entry in jarinfo.get_classes():
         ci = jarinfo.get_classinfo(entry)
-        print "Entry: ", entry
+        print("Entry: ", entry)
         cli_print_classinfo(options, ci)
         print
 
 
 def cli_jar_provides(options, jarinfo):
-    print "jar provides:"
+    print("jar provides:")
 
     for provided in sorted(jarinfo.get_provides().iterkeys()):
         if not fnmatches(provided, *options.api_ignore):
-            print " ", provided
+            print(" ", provided)
     print
 
 
 def cli_jar_requires(options, jarinfo):
-    print "jar requires:"
+    print("jar requires:")
 
     for required in sorted(jarinfo.get_requires().iterkeys()):
         if not fnmatches(required, *options.api_ignore):
-            print " ", required
+            print(" ", required)
     print
 
 

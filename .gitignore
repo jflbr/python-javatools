@@ -16,3 +16,5 @@ tmp
 _build
 .DS_Store
 _deploy
+.eggs/*
+.v2/*

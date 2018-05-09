@@ -20,6 +20,7 @@ author: Christopher O'Brien  <obriencj@gmail.com>
 license: LGPL v.3
 """
 
+import sys
 
 from . import get_data_fn
 from javatools.manifest import main, Manifest, SignatureManifest
@@ -27,6 +28,10 @@ from javatools.manifest import main, Manifest, SignatureManifest
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
 
+if sys.version_info > (3,):
+    PYVER=3
+else:
+    PYVER=2
 
 class ManifestTest(TestCase):
 
@@ -39,7 +44,7 @@ class ManifestTest(TestCase):
         """
 
         # the result we expect to see from running the script
-        with open(get_data_fn(expected_result)) as f:
+        with open(get_data_fn(expected_result), newline='') as f:
             expected_result = f.read()
 
         # the invocation of the script
@@ -59,6 +64,9 @@ class ManifestTest(TestCase):
             main(cmd)
             result = tmp_out.read()
 
+            if isinstance(result, bytes):
+                result = result.decode()
+
             self.assertEqual(
                 result, expected_result,
                 "Result of \"%r\" does not match expected output."
@@ -77,7 +85,7 @@ class ManifestTest(TestCase):
 
         # the expected result is identical to what we feed into the
         # manifest parser
-        with open(src_file) as f:
+        with open(src_file, newline='') as f:
             expected_result = f.read()
 
         # create a manifest and parse the chosen test data
@@ -85,7 +93,7 @@ class ManifestTest(TestCase):
         mf.parse_file(src_file)
         result = mf.get_data()
 
-        self.assertEquals(
+        self.assertEqual(
             result, expected_result,
             "Manifest load/store does not match with file %s. Received:\n%s"
             % (src_file, result))

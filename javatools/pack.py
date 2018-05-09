@@ -30,10 +30,15 @@ or stream.
 # profiling showed a significant amount of time spent in this module,
 # so there will be efforts here to increase performance
 
+from past.builtins import xrange
+from future.utils import with_metaclass
 
 from abc import ABCMeta, abstractmethod
 from struct import Struct
 
+import sys
+if sys.version_info > (3,):
+    buffer = memoryview
 
 __all__ = (
     "compile_struct", "unpack",
@@ -194,8 +199,10 @@ class BufferUnpacker(Unpacker):
             raise UnpackException(fmt, size, avail)
 
         self.offset = offset + size
-        return sfmt.unpack_from(self.data, offset)
-
+        try:
+            return sfmt.unpack_from(self.data, offset)
+        except TypeError:
+            return sfmt.unpack_from(self.data.encode(), offset)
 
     def unpack_struct(self, struct):
         """
@@ -216,7 +223,10 @@ class BufferUnpacker(Unpacker):
             raise UnpackException(struct.format, size, avail)
 
         self.offset = offset + size
-        return struct.unpack_from(self.data, offset)
+        try:
+            return struct.unpack_from(self.data, offset)
+        except TypeError:
+            return struct.unpack_from(self.data.encode(), offset)
 
 
     def read(self, count):
@@ -279,8 +289,10 @@ class StreamUnpacker(Unpacker):
         if len(buff) < size:
             raise UnpackException(fmt, size, len(buff))
 
-        return sfmt.unpack(buff)
-
+        try:
+            return sfmt.unpack(buff)
+        except TypeError:
+            return sfmt.unpack(buff.encode())
 
     def unpack_struct(self, struct):
         """
@@ -298,7 +310,10 @@ class StreamUnpacker(Unpacker):
         if len(buff) < size:
             raise UnpackException(struct.format, size, len(buff))
 
-        return struct.unpack(buff)
+        try:
+            return struct.unpack(buff)
+        except TypeError:
+            return struct.unpack(buff.encode())
 
 
     def read(self, count):
@@ -338,15 +353,15 @@ def unpack(data):
     unpacker:`
     """
 
-    if isinstance(data, (str, buffer)):
+    if isinstance(data, (str, bytes, buffer)):
         return BufferUnpacker(data)
 
     elif hasattr(data, "read"):
         return StreamUnpacker(data)
 
     else:
-        raise TypeError("unpack requires a str, buffer, or instance"
-                        " supporting the read method")
+        raise TypeError("unpack requires a str, buffer, bytes, "
+                        "or instance supporting the read method")
 
 
 class UnpackException(Exception):

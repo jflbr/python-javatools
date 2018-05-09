@@ -19,10 +19,9 @@ Utilities for discovering entry deltas in a pair of zip files.
 :author: Christopher O'Brien  <obriencj@gmail.com>
 :license: LGPL
 """
+from future.moves.itertools import zip_longest as izip_longest
 
-
-from cStringIO import StringIO
-from itertools import izip_longest
+from io import StringIO
 from os import walk
 from os.path import getsize, isdir, isfile, islink, join, relpath
 from zipfile import is_zipfile, ZipFile, ZipInfo, _EndRecData
@@ -30,6 +29,9 @@ from zlib import crc32
 
 from .dirutils import LEFT, RIGHT, DIFF, SAME, closing
 
+import sys
+if sys.version_info > (3,):
+    buffer = memoryview
 
 __all__ = (
     "compare", "compare_zips",

@@ -101,11 +101,18 @@ def create_signature_block(openssl_digest, certificate, private_key,
             stack.push(X509.load_cert(cert))
         smime.set_x509_stack(stack)
 
-    pkcs7 = smime.sign(BIO.MemoryBuffer(data),
-                       algo=openssl_digest,
-                       flags=(SMIME.PKCS7_BINARY |
-                              SMIME.PKCS7_DETACHED |
-                              SMIME.PKCS7_NOATTR))
+    try:
+        pkcs7 = smime.sign(BIO.MemoryBuffer(data),
+                        algo=openssl_digest,
+                        flags=(SMIME.PKCS7_BINARY |
+                                SMIME.PKCS7_DETACHED |
+                                SMIME.PKCS7_NOATTR))
+    except TypeError:
+        pkcs7 = smime.sign(BIO.MemoryBuffer(data.encode()),
+                        algo=openssl_digest,
+                        flags=(SMIME.PKCS7_BINARY |
+                                SMIME.PKCS7_DETACHED |
+                                SMIME.PKCS7_NOATTR))
     tmp = BIO.MemoryBuffer()
     pkcs7.write_der(tmp)
     return tmp.read()

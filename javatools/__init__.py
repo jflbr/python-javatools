@@ -30,6 +30,10 @@ References
 :license: LGPL
 """  # noqa
 
+from past.builtins import xrange
+from future.utils import listitems
+
+import sys
 
 from functools import partial
 
@@ -37,6 +41,11 @@ from .dirutils import fnmatches
 from .opcodes import disassemble
 from .pack import compile_struct, unpack, UnpackException
 
+if sys.version_info > (3,):
+    PYVER = 3
+    buffer = memoryview
+else:
+    PYVER = 2
 
 __all__ = (
     "JavaClassInfo", "JavaConstantPool", "JavaMemberInfo",
@@ -65,6 +74,8 @@ __all__ = (
 JAVA_CLASS_MAGIC = (0xCA, 0xFE, 0xBA, 0xBE)
 JAVA_CLASS_MAGIC_STR = "\xca\xfe\xba\xbe"
 
+if PYVER >= 3:
+    JAVA_CLASS_MAGIC_STR = JAVA_CLASS_MAGIC_STR.encode()
 
 _BUFFERING = 2 ** 14
 
@@ -703,6 +714,9 @@ class JavaClassInfo(object):
         """  # noqa
 
         buff = self.get_attribute("SourceDebugExtension")
+        if isinstance(buff, bytes):
+            buff = buff.decode()
+
         return (buff and str(buff)) or None
 
 
@@ -893,6 +907,10 @@ class JavaClassInfo(object):
                      CONST_Methodref, CONST_InterfaceMethodref):
 
                 # convert this away from unicode so we can
+                pretty_deref_const = cpool.pretty_deref_const(i)
+                if isinstance(pretty_deref_const, bytes):
+                    pretty_deref_const = pretty_deref_const.decode()
+
                 pv = str(cpool.pretty_deref_const(i))
 
                 if pv[0] == "[":
@@ -904,7 +922,11 @@ class JavaClassInfo(object):
                     # the event that this was a method or field on the
                     # array, we'll throw away that as well, and just
                     # emit the type contained in the array.
+                    try:
                     t, _buff = _next_argsig(buffer(pv))
+                    except TypeError:
+                        t, _buff = _next_argsig(memoryview(pv.encode()).tobytes().decode())
+
                     if t[1] == "L":
                         pv = _pretty_type(t[1:])
                     else:
@@ -1888,7 +1910,7 @@ class JavaAnnotation(dict):
             return False
 
         # for each of the key/val pairs, check equality
-        for key, lval in self.items():
+        for key, lval in listitems(self):
             rval = other[key]
             if not _annotation_val_eq(lval[0], lval[1], self.cpool,
                                       rval[0], rval[1], other.cpool):
@@ -2093,10 +2115,14 @@ def _pretty_const_type_val(typecode, val):
 
     if typecode == CONST_Utf8:
         typestr = "Utf8"  # formerly Asciz, which was considered Java bug
+        try:
         if isinstance(val, unicode):
-            val = repr(val)[2:-1]  # trim off the surrounding u"" (HACK)
-        else:
+                val = repr(val)[1:]  # trim off the surrounding u if unicode (HACK)
+        except NameError:
+            pass
+        finally:
             val = repr(val)[1:-1]  # trim off the surrounding "" (HACK)
+
     elif typecode == CONST_Integer:
         typestr = "int"
     elif typecode == CONST_Float:
@@ -2169,21 +2195,34 @@ def _next_argsig(buff):
     c = buff[0]
 
     if c in "BCDFIJSVZ":
+        try:
         result = (c, buffer(buff, 1))
+        except TypeError:
+            result = (c, memoryview(buff.encode()).tobytes().decode()[1:])
 
     elif c == "[":
+        try:
         d, buff = _next_argsig(buffer(buff, 1))
+        except TypeError:
+            d, buff = _next_argsig(memoryview(buff.encode()).tobytes().decode()[1:])
+
         result = (c + d, buff)
 
     elif c == "L":
         s = buff[:]
         i = s.find(';') + 1
+        try:
         result = (s[:i], buffer(buff, i))
+        except TypeError:
+            result = (s[:i], memoryview(buff.encode()).tobytes().decode()[i:])
 
     elif c == "(":
         s = buff[:]
         i = s.find(')') + 1
+        try:
         result = (s[:i], buffer(buff, i))
+        except TypeError:
+            result = (s[:i], memoryview(buff.encode()).tobytes().decode()[i:])
 
     else:
         raise Unimplemented("_next_argsig is %r in %r" % (c, str(buff)))
@@ -2196,7 +2235,11 @@ def _typeseq_iter(s):
     iterate through all of the type signatures in a sequence
     """
 
+    try:
     buff = buffer(str(s))
+    except TypeError:
+        buff = memoryview(s.encode()).tobytes().decode()
+
     while buff:
         t, buff = _next_argsig(buff)
         yield t
@@ -2287,7 +2330,15 @@ def _clean_array_const(s):
     de-array a constant type.
     """
 
-    t, b = _next_argsig(buffer(s))
+    try:
+        buff = buffer(s)
+    except TypeError:
+        buff = memoryview(s.encode()).tobytes().decode()
+
+    t, b = _next_argsig(buff)
+    if isinstance(b, bytes):
+        b = b.decode()
+
     return (t, str(b))
 
 
