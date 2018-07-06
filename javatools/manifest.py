@@ -605,7 +605,7 @@ def detect_linesep(data):
     if isinstance(data, (str, memoryview)):
         data = StringIO(data)
 
-    offset = data.tell()
+    offset = data.decode('utf-8').tell()
     line = data.readline()
     data.seek(offset)
 
