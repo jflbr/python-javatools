@@ -54,7 +54,7 @@ def verify(certificate, jar_file, key_alias):
 
     # Step 1: check the crypto part.
     sf_file = mkstemp()[1]
-    with open(sf_file, "w") as tmp_buf:
+    with open(sf_file, 'wb') as tmp_buf:
         tmp_buf.write(sf_data)
         tmp_buf.flush()
         file_list = zip_file.namelist()
